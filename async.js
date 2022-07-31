@@ -1,5 +1,10 @@
 const redux = require("redux");
 const createStore = redux.createStore;
+const applyMiddleware = redux.applyMiddleware;
+const reduxThunk = require("redux-thunk");
+const axios = require("axios");
+const reduxLogger = require("redux-logger");
+const logger = reduxLogger.createLogger();
 
 //action
 const FETCH_USER_REQUEST = "FETCH_USER_REQUEST";
@@ -60,5 +65,22 @@ const reducer = (state = initialState, action) => {
 };
 
 //store
-const store = createStore(reducer);
-console.log(store);
+const store = createStore(reducer, applyMiddleware(reduxThunk, logger));
+
+//craete function async
+const fetchUsers = () => {
+  return function (dispatch) {
+    dispatch(fetchUserRequest());
+    axios
+      .get("https://jsonplaceholder.typicode.com/users")
+      .then((res) => {
+        const userId = res.data.map((user) => user.id);
+        dispatch(fetchUserSuccess(userId));
+      })
+      .catch((err) => {
+        dispatch(fetchUserFailure(err));
+      });
+  };
+};
+
+store.dispatch(fetchUsers());
